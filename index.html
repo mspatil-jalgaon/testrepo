@@ -1,30 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Image to PDF Converter</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<title>Print Sheet</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f9f9f9;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        font-size: 14px;
+    }
+
+    th, td {
+        border: 1px solid #bdbdbd;
+        padding: 4px;
+        text-align: center;
+    }
+
+    th {
+        background: #e5e5e5;
+        font-weight: bold;
+    }
+
+    input[type="text"], input[type="number"] {
+        width: 95%;
+        padding: 3px;
+        border: 1px solid #999;
+        font-size: 13px;
+    }
+
+    .btn {
+        background: #1976d2;
+        color: white;
+        padding: 8px 14px;
+        border: none;
+        cursor: pointer;
+        margin: 10px 5px 20px 0;
+        border-radius: 3px;
+        font-size: 14px;
+    }
+
+    .btn:hover {
+        background: #125a9c;
+    }
+
+    .delete-btn {
+        background: #d32f2f;
+        color: white;
+        padding: 4px 10px;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    .delete-btn:hover {
+        background: #a32121;
+    }
+
+    tfoot td {
+        background: #f4f4f4;
+        font-weight: bold;
+    }
+</style>
 </head>
 <body>
-  <div class="container" id="uploadSection">
-    <h1>PDF Converter</h1>
-    <select id="conversionType">
-      <option>Image to PDF</option>
-    </select><br/>
-    <input type="file" id="fileInput" accept="image/*" /><br/>
-    <button id="convertBtn">Convert</button>
-  </div>
 
-  <div class="container" id="resultSection" style="display: none;">
-    <h2>Image Preview</h2>
-    <img id="previewImage" src="" alt="Preview" />
-    <br/>
-    <button id="downloadBtn">Download PDF</button>
-  </div>
+<h2>Print Calculation Sheet</h2>
 
-  <!-- jsPDF Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="script.js"></script>
+<button class="btn" onclick="addRow()">Add Row</button>
+<button class="btn" onclick="window.print()">Print Preview</button>
+
+<table id="printTable">
+    <thead>
+        <tr>
+            <th>Branch</th>
+            <th>PDF Name</th>
+            <th>PDF Pages</th>
+            <th>Set</th>
+            <th>Per Set (1.3)</th>
+            <th>Per Set (1.5)</th>
+            <th>Total Pages</th>
+            <th>Total Price (1.3)</th>
+            <th>Total Price (1.5)</th>
+            <th>Note</th>
+            <th>Del</th>
+        </tr>
+    </thead>
+
+    <tbody id="tableBody">
+        <!-- Rows inserted by JS -->
+    </tbody>
+
+    <tfoot>
+        <tr>
+            <td colspan="3">Totals</td>
+            <td id="totalSets">0</td>
+            <td id="totalPer13">0</td>
+            <td id="totalPer15">0</td>
+            <td id="totalPages">0</td>
+            <td id="sumPrice13">0</td>
+            <td id="sumPrice15">0</td>
+            <td colspan="2"></td>
+        </tr>
+    </tfoot>
+</table>
+
+<script>
+function addRow() {
+    let row = `
+    <tr>
+        <td><input type="text" oninput="calc()"></td>
+        <td><input type="text" oninput="calc()"></td>
+        <td><input type="number" min="0" oninput="calc()"></td>
+        <td><input type="number" min="0" oninput="calc()"></td>
+
+        <td><input type="number" readonly></td>
+        <td><input type="number" readonly></td>
+
+        <td><input type="number" readonly></td>
+        <td><input type="number" readonly></td>
+        <td><input type="number" readonly></td>
+
+        <td><input type="text"></td>
+
+        <td><button class="delete-btn" onclick="delRow(this)">X</button></td>
+    </tr>
+    `;
+    document.getElementById("tableBody").insertAdjacentHTML("beforeend", row);
+}
+
+function delRow(btn) {
+    btn.parentElement.parentElement.remove();
+    calc();
+}
+
+function calc() {
+    let rows = document.querySelectorAll("#tableBody tr");
+
+    let totalSets = 0, totalPer13 = 0, totalPer15 = 0;
+    let totalPages = 0, sumPrice13 = 0, sumPrice15 = 0;
+
+    rows.forEach(row => {
+        let pages = parseFloat(row.children[2].querySelector("input").value) || 0;
+        let sets = parseFloat(row.children[3].querySelector("input").value) || 0;
+
+        let per13 = Math.ceil(pages * 1.3);
+        let per15 = Math.ceil(pages * 1.5);
+
+        let tPages = pages * sets;
+        let t13 = Math.ceil(tPages * 1.3);
+        let t15 = Math.ceil(tPages * 1.5);
+
+        row.children[4].querySelector("input").value = per13;
+        row.children[5].querySelector("input").value = per15;
+        row.children[6].querySelector("input").value = tPages;
+        row.children[7].querySelector("input").value = t13;
+        row.children[8].querySelector("input").value = t15;
+
+        totalSets += sets;
+        totalPer13 += per13;
+        totalPer15 += per15;
+        totalPages += tPages;
+        sumPrice13 += t13;
+        sumPrice15 += t15;
+    });
+
+    document.getElementById("totalSets").innerText = totalSets;
+    document.getElementById("totalPer13").innerText = totalPer13;
+    document.getElementById("totalPer15").innerText = totalPer15;
+    document.getElementById("totalPages").innerText = totalPages;
+    document.getElementById("sumPrice13").innerText = sumPrice13;
+    document.getElementById("sumPrice15").innerText = sumPrice15;
+}
+</script>
+
 </body>
 </html>
